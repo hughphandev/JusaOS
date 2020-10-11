@@ -1,0 +1,78 @@
+	jmp _start
+	%include "print.asm"
+
+_start:	
+	;; set video mode
+	mov ah, 0x00
+	mov al, 0x03
+	int 10h
+
+	print wtext, wtext_len, 0x00 | 0x2, 1, 0, 0, 0
+
+	;; keyboard handling
+get_input:	
+	mov di, cmdString
+keyloop:	
+	xor ax, ax
+	int 0x16
+
+	mov ah, 0x0e
+	int 0x10
+
+	cmp al, 0xD
+	je run_command
+
+	mov [di], al
+	inc di
+	jmp keyloop
+
+run_command:
+	mov al, 0x0A
+	int 0x10
+
+	mov byte [di], 0
+	mov al, [cmdString]
+
+	cmp al, 'F'
+	je file_explorer
+
+	cmp al, 'R'
+	je reboot
+
+	print failure
+	jmp get_input
+
+reboot:
+	jmp 0xFFFF:0x0000	;reset vetor
+
+file_explorer:	
+	print success
+	mov ax, 0x2000
+	mov ds, ax
+	xor bx, bx
+	print bx
+	jmp get_input
+
+done:	
+	hlt
+
+
+wtext:	
+	db 'welcome to JusaOS', 10, 13
+	db '-----------------', 10, 13
+	db 'F> File explorer', 10, 13
+	db 'R> Reboot', 10, 13
+
+wtext_len:
+	dw $ - wtext 
+
+success:
+	db 'Success!', 10, 13, 0
+
+failure:
+	db 'Oops! Something went wrong!', 10, 13, 0
+
+cmdString:
+	db ''
+
+	times 512 - ($ - $$) db 0

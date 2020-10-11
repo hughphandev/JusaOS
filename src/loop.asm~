@@ -1,0 +1,6 @@
+%macro while 2
+while:
+	cmp %1, 0
+	je end_while
+%endmacro
+	
